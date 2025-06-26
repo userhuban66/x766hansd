@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lisans Paneli</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        :root {
+            --background: #282a36; --surface: #44475a; --primary: #bd93f9; --secondary: #ff79c6;
+            --green: #50fa7b; --red: #ff5555; --text-primary: #f8f8f2;
+            --text-secondary: #bd93f9; --border-color: rgba(189, 147, 249, 0.2);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--background); color: var(--text-primary); padding: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
+        .header h2 { color: var(--text-secondary); }
+        .logout-link { color: var(--secondary); text-decoration: none; font-weight: 600; transition: color 0.3s; }
+        .logout-link:hover { color: var(--red); }
+        .card { background-color: var(--surface); padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem; border: 1px solid var(--border-color); }
+        .card h3 { margin-bottom: 1rem; color: var(--text-secondary); }
+        .status-on { color: var(--green); font-weight: bold; }
+        .status-off { color: var(--red); font-weight: bold; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
+        .btn-toggle { background-color: var(--primary); color: var(--background); }
+        .btn-toggle:hover { filter: brightness(1.2); }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--text-secondary); font-weight: 600; }
+        tr:hover { background-color: rgba(255, 255, 255, 0.05); }
+        input[type="text"], input[type="date"] { width: 95%; background-color: var(--background); border: 1px solid var(--border-color); border-radius: 5px; padding: 0.5rem; color: var(--text-primary); }
+        input:focus { outline: none; border-color: var(--primary); }
+        input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; }
+        .btn-save { background-color: var(--green); color: var(--background); }
+        .btn-save:hover { filter: brightness(1.2); }
+
+        /* --- YENİ: SAĞ TIK MENÜSÜ STİLLERİ --- */
+        #context-menu {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+            background-color: var(--surface);
+            border: 1px solid var(--primary);
+            border-radius: 5px;
+            padding: 5px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            min-width: 150px;
+        }
+        #context-menu .item {
+            padding: 8px 15px;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        #context-menu .item:hover {
+            background-color: var(--primary);
+            color: var(--background);
+        }
+        #context-menu .item.delete {
+            color: var(--red);
+        }
+        #context-menu .item.delete:hover {
+            background-color: var(--red);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Lisans Yönetimi</h2>
+            <a href="/logout" class="logout-link">Çıkış Yap</a>
+        </div>
+        <div class="card">
+            <h3>Panel Ayarları</h3>
+            <form method="POST" action="/toggle_restriction">
+                <p style="margin-bottom: 1rem;">
+                    Yeni kullanıcı alımı modu: 
+                    {% if settings.restrict_to_registered %}
+                        <span class="status-off">KAPALI</span>
+                    {% else %}
+                        <span class="status-on">AÇIK</span>
+                    {% endif %}
+                </p>
+                <button type="submit" class="btn btn-toggle">
+                    {% if settings.restrict_to_registered %}Yeni Kullanıcı Alımını AÇ{% else %}Yeni Kullanıcı Alımını KAPAT{% endif %}
+                </button>
+            </form>
+        </div>
+        <div class="card table-container">
+            <h3>Kullanıcı Listesi</h3>
+            <table>
+                <thead>
+                    <tr><th>HWID</th><th>Aktif</th><th>Üyelik</th><th>Bitiş</th><th>İşlem</th></tr>
+                </thead>
+                <tbody id="user-table-body">
+                    {% for hwid, entry in licenses.items() %}
+                    <tr data-hwid="{{ hwid }}">
+                        <form method="POST" action="/update">
+                            <td data-label="HWID"><input name="hwid" value="{{ hwid }}" readonly></td>
+                            <td data-label="Aktif"><input type="checkbox" name="aktif" {% if entry.aktif %}checked{% endif %}></td>
+                            <td data-label="Üyelik"><input type="text" name="uye_tipi" value="{{ entry.uye_tipi }}"></td>
+                            <td data-label="Bitiş"><input type="date" name="bitis" value="{{ entry.bitis }}"></td>
+                            <td data-label="İşlem"><button type="submit" class="btn btn-save">Kaydet</button></td>
+                        </form>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <form method="POST" action="/update">
+                            <td data-label="HWID"><input name="hwid" placeholder="Yeni HWID"></td>
+                            <td data-label="Aktif"><input type="checkbox" name="aktif"></td>
+                            <td data-label="Üyelik"><input type="text" name="uye_tipi" placeholder="premium / basic"></td>
+                            <td data-label="Bitiş"><input type="date" name="bitis"></td>
+                            <td data-label="İşlem"><button type="submit" class="btn btn-save">Ekle</button></td>
+                        </form>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="context-menu">
+        <div class="item delete" id="delete-btn">Sil</div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const contextMenu = document.getElementById('context-menu');
+        const deleteBtn = document.getElementById('delete-btn');
+        const userTableBody = document.getElementById('user-table-body');
+        let activeHwid = null;
+
+        // Tablo satırlarına sağ tıklama olayını dinle
+        userTableBody.addEventListener('contextmenu', (e) => {
+            let targetRow = e.target.closest('tr');
+            if (targetRow && targetRow.dataset.hwid) {
+                e.preventDefault();
+                activeHwid = targetRow.dataset.hwid;
+                contextMenu.style.top = `${e.pageY}px`;
+                contextMenu.style.left = `${e.pageX}px`;
+                contextMenu.style.display = 'block';
+            }
+        });
+
+        // Menüyü kapatmak için herhangi bir yere tıkla
+        window.addEventListener('click', () => {
+            if (contextMenu.style.display === 'block') {
+                contextMenu.style.display = 'none';
+            }
+        });
+
+        // Sil butonuna tıklandığında
+        deleteBtn.addEventListener('click', () => {
+            if (activeHwid) {
+                if (confirm(`'${activeHwid}' HWID'sini kalıcı olarak silmek istediğinizden emin misiniz?`)) {
+                    fetch(`/delete/${activeHwid}`, {
+                        method: 'DELETE',
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Satırı tablodan kaldır
+                            document.querySelector(`tr[data-hwid="${activeHwid}"]`).remove();
+                        } else {
+                            alert('Hata: ' + data.message);
+                        }
+                        activeHwid = null;
+                    })
+                    .catch(error => {
+                        console.error('Silme işlemi sırasında hata:', error);
+                        alert('Bir hata oluştu. Lütfen konsolu kontrol edin.');
+                    });
+                }
+            }
+        });
+    });
+    </script>
+</body>
+</html>
