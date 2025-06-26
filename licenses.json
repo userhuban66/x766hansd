@@ -1,0 +1,17 @@
+{
+    "licenses": {
+        "": {
+            "aktif": false,
+            "uye_tipi": "basic",
+            "bitis": ""
+        },
+        "46BB27EA-A386-4613-A4E3-D843AE9ABF2E": {
+            "aktif": true,
+            "uye_tipi": "premium",
+            "bitis": "2027-10-01"
+        }
+    },
+    "settings": {
+        "restrict_to_registered": false
+    }
+}
